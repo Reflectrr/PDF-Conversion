@@ -91,7 +91,7 @@ def checkIgnoredPrefix(line):
 def outputJsonFile(xmlPath, output):
     outputFileName = xmlPath.split("/")[-1][:-4] + ".json"
     path = os.getcwd()
-    result_directory = path + "/result/"
+    result_directory = path + "/json/"
     if not os.path.exists(result_directory):
         os.mkdir(result_directory)
     outputFileName = result_directory + outputFileName
@@ -129,7 +129,7 @@ def parseFile(inputfile: str):
         os.mkdir(temp_dir)
     print("Parsing", inputfile)
     os.system(
-        "SymbolScraper/bin/sscraper " + inputfile + " " + temp_dir + " > /dev/null"
+        "./PDFConversion/SymbolScraper/bin/sscraper " + inputfile + " " + temp_dir + " > /dev/null"
     )
     for filename in os.listdir(temp_dir):
         if filename.endswith(".xml"):
@@ -205,6 +205,12 @@ def parse(inputXml: str):
 
     outputJsonFile(inputXml, output)
 
+def runParser(file):
+    if file.endswith(".pdf"):
+        parseFile(file)
+        return 0
+    else:
+        return -1
 
 if __name__ == "__main__":
     argv = sys.argv[1:]
