@@ -50,12 +50,14 @@ def preParseXML(path):
 
 
 def updateText(inputObject, word):
+    # if inputObject is a string, append word to it
     if isinstance(inputObject, str):
         inputObject += word
-        inputObject += " " if word and word[-1] != "-" else ""
+        inputObject += " " if word and word != '\n\n' and word[-1] != "-" else ""
+    # if inputObject is a list, append word to the last element
     else:
         inputObject[-1] += word
-        inputObject[-1] += " " if word and word[-1] != "-" else ""
+        inputObject[-1] += " " if word and word != '\n\n' and word[-1] != "-" else ""
     return inputObject
 
 
@@ -160,18 +162,22 @@ def parse(inputXml: str):
     # use the next line as new section title
     for pageXml in root.iter("Page"):
         for lineXml in pageXml.iter("Line"):
+            # ignore texts on the side
             if checkSideLine(lineXml):
                 continue
+            # check if the line is a new section title
             if checkStartSection(lineXml):
                 newSectionFlag = True
                 continue
+            # check if the line is the start of a new paragraph
             if (
                 checkStartParagrph(lineXml, paragraphStart)
                 and currSection not in singleParagraphSection
                 and output[currSection][-1]
             ):
                 output[currSection][-1] = output[currSection][-1].strip()
-                output[currSection].append("")
+                output[currSection].append("") # start new paragraph in current section
+                output['fullText'] = updateText(output['fullText'], "\n\n")
             line = ""
             for wordXml in lineXml.iter("Word"):
                 word = buildWord(wordXml)
@@ -181,7 +187,6 @@ def parse(inputXml: str):
                 continue
 
             # update outputs
-            output["fullText"] = updateText(output["fullText"], line)
             # blue square is always by itself on a line, so sectionTitleBuf is fully populated here
             # either write to a new section title or an existing section's content
             if newSectionFlag:
@@ -192,16 +197,19 @@ def parse(inputXml: str):
                 currSection = line.lower()
                 output[currSection] = []
                 output[currSection].append("")
+                output["fullText"] = updateText(output["fullText"], '\n\n')
                 newSectionFlag = False
             elif line.lower().startswith("abstract:"):
                 # print(output)
                 output["title & info"] = output["title & info"].strip()
+                output['fullText'] = updateText(output['fullText'], "\n\n")
                 currSection = "abstract"
                 output["abstract"] += line[len("abstract:") :].strip()
             elif checkEndOfPage(line.lower()):
                 break
             else:
                 output[currSection] = updateText(output[currSection], line)
+            output["fullText"] = updateText(output["fullText"], line)
 
     outputJsonFile(inputXml, output)
 
